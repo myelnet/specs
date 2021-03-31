@@ -37,16 +37,16 @@
             - Developers can use the naming system of their choice (e.g. IPNS, ENS, etc.) to point to a CID representation of the content. Any time the content is mutated, the naming record should be updated with a new CID. In addition, IPLD selector specs are available to declare which parts of the content graph to query. This can be represented via a simple path notation, for instance: 
             - `<CID>/images/Frog.jpeg` 
             - or a more complex serialized declaration for traversing a graph and returning specific nodes. By default, queries for a root CID fetch the entire graph. 
-            - Myel offers multiple mechanisms for content discovery based on the use case. The first, gossip-based, is fully decentralized though may have a higher latency, the second Hub-based offers more performance with a compromise on decentralization.
-                - **Gossip System:** Content discovery begins by publishing a gossip message containing a CID and selector to one of the provider subnetworks. The gossip message is propagated across the network of providers who check their supply and reply directly to the client with an offer if they have the requested blocks. The offer contains terms under which a provider is willing to accept a data pull request.
+            - Myel offers multiple mechanisms for content discovery based on the use case. The first, gossip-based, is similar to Gnutella and fully decentralized though may have a higher latency, the second Hub-based offers more performance with a compromise on decentralization.
+                - **Gossip System:** Content discovery begins by publishing a gossip message containing a CID and selector to one of the provider subnetworks. The gossip message is propagated across the network of providers who check their supply and decide if they want to reply with an offer or simply ignore the message. To send the response, each peer recursively forwards the message back to the publisher. This adds more privacy as it becomes harder to trace a query back to a client as the network grows. The offer contains terms under which a provider is willing to accept a data pull request.
                     - Depending on the client preference (i.e. faster or cheaper transfer), an offer is selected and the client creates a new deal and opens a data pull request with the provider. The provider validates the deal and if it is compatible with the offer will initiate the payment protocol.
             - ```go
                 // Start by creating a new session for a root cid
                 session := exchange.Session(context, cid)
                 // Query the network for the best offer
-                offer := session.QueryGossip(context)
-                // Start the transfer
-                error := session.SyncBlocks(context, offer)
+                session.QueryGossip(context)
+                // Start the transfer when we have a satisfying offer
+                session.StartTransfer(context)
                 // Wait for the transfer to complete
                 error = <- session.Done():
                 // if err == nil the transfer was successful and content is in our blockstore
